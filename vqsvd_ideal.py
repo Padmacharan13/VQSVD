@@ -1,8 +1,4 @@
 """
-vqsvd_ideal_simulator.py
-
-Full pipeline for Phase 2/3 of the EM-VQSVD project:
-
     1. Compute classical SVD of a test matrix M (ground truth).
     2. Build a parameterized quantum circuit ansatz (two of them: U(theta), V(phi)).
     3. Train them using the Ky Fan theorem loss function.
@@ -11,7 +7,7 @@ Full pipeline for Phase 2/3 of the EM-VQSVD project:
     5. Compare the learned singular values/vectors against the classical
        ground truth.
 
-Requires: pennylane, numpy   (pip install pennylane)
+Requires: pennylane, numpy
 """
 
 import pennylane as qml
@@ -19,9 +15,9 @@ from pennylane import numpy as np   # autograd-wrapped numpy -> differentiable
 
 np.random.seed(42)
 
-# ----------------------------------------------------------------------
+
 # 0. Problem setup: matrix, qubits, number of singular values wanted
-# ----------------------------------------------------------------------
+
 n_qubits = 2                 # 2 qubits -> 4x4 matrix
 dim = 2 ** n_qubits          # 4
 T = dim                      # how many singular values/vectors to extract (all 4 here)
@@ -36,9 +32,9 @@ M = np.array([
     [0.5, 0.1, 0.2, 0.9]
 ])
 
-# ----------------------------------------------------------------------
+
 # 1. Classical SVD -- ground truth
-# ----------------------------------------------------------------------
+
 U_true, S_true, Vh_true = np.linalg.svd(M)
 print("=" * 65)
 print("STEP 1 -- Classical SVD (ground truth, computed with NumPy)")
@@ -47,10 +43,10 @@ print("Singular values (sorted, descending):")
 print("  ", np.round(S_true, 4))
 print()
 
-# ----------------------------------------------------------------------
+
 # 2. Ansatz: hardware-efficient parameterized circuit
 #    Each layer = RY + RZ rotations on every qubit, then a ring of CNOTs.
-# ----------------------------------------------------------------------
+
 def ansatz(params, n_qubits, n_layers):
     for l in range(n_layers):
         for q in range(n_qubits):
@@ -79,12 +75,12 @@ def int_to_bits(i, n):
 # Precompute the basis-state bit patterns once
 basis_patterns = [int_to_bits(i, n_qubits) for i in range(dim)]
 
-# ----------------------------------------------------------------------
+
 # 3. Ky Fan loss:  L = sum_i  q_i * Re( <psi_i| U(theta)^dagger M V(phi) |psi_i> )
 #    Maximizing this (with descending weights q_i) forces the trained
 #    circuits to output the true singular vectors, in the correct order,
 #    and the loss terms themselves converge to the true singular values.
-# ----------------------------------------------------------------------
+
 weights_q = np.array([float(T - i) for i in range(T)])   # e.g. [4, 3, 2, 1]
 
 
@@ -102,9 +98,9 @@ def cost(theta, phi):
     return -ky_fan_loss(theta, phi)   # minimize negative loss = maximize loss
 
 
-# ----------------------------------------------------------------------
+
 # 4. Train on the ideal simulator
-# ----------------------------------------------------------------------
+
 theta = np.array(np.random.uniform(0, 2 * np.pi, (n_layers, n_qubits, 2)), requires_grad=True)
 phi   = np.array(np.random.uniform(0, 2 * np.pi, (n_layers, n_qubits, 2)), requires_grad=True)
 
@@ -121,11 +117,11 @@ for it in range(n_iterations):
 
 print()
 
-# ----------------------------------------------------------------------
+
 # 5. Extract learned singular values / vectors, compare to ground truth
-# ----------------------------------------------------------------------
+
 learned_sigmas = []
-learned_U_cols = []
+learned_U_cols = [] 
 learned_V_cols = []
 for i in range(T):
     u_i = get_state(theta, basis_patterns[i])

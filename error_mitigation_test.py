@@ -9,10 +9,10 @@ from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, depolarizing_error, ReadoutError
 
-# ----------------------------------------------------------------------
+
 # 0. Setup
-# ----------------------------------------------------------------------
-theta = np.pi / 3          # our test angle
+
+theta = np.pi / 3
 shots = 20000
 ideal_p0 = np.cos(theta / 2) ** 2
 print(f"Exact ideal P(0) for theta = pi/3:  {ideal_p0:.4f}\n")
@@ -38,9 +38,8 @@ def p0_from_counts(counts):
     total = sum(counts.values())
     return counts.get("0", 0) / total
 
-# ----------------------------------------------------------------------
 # 1. Baseline: ideal vs. plain noisy result (no mitigation)
-# ----------------------------------------------------------------------
+
 def base_circuit():
     qc = QuantumCircuit(1, 1)
     qc.ry(theta, 0)
@@ -53,9 +52,9 @@ noisy_counts = sim_noisy.run(base_circuit(), shots=shots).result().get_counts()
 p0_ideal_sim = p0_from_counts(ideal_counts)
 p0_noisy_raw = p0_from_counts(noisy_counts)
 
-# ----------------------------------------------------------------------
+
 # 2. Zero-Noise Extrapolation (ZNE)
-# ----------------------------------------------------------------------
+
 def folded_circuit(scale_factor):
     qc = QuantumCircuit(1, 1)
     qc.ry(theta, 0)
@@ -75,9 +74,9 @@ for s in scale_factors:
 a, b = np.polyfit(scale_factors, zne_results, 1)
 zne_extrapolated = b
 
-# ----------------------------------------------------------------------
+
 # 3. Readout error mitigation
-# ----------------------------------------------------------------------
+
 def calibration_counts(prepared_bit):
     qc = QuantumCircuit(1, 1)
     if prepared_bit == 1:
@@ -101,9 +100,9 @@ measured_vector = np.array([p0_noisy_raw, 1 - p0_noisy_raw])
 corrected_vector = A_inv @ measured_vector
 p0_readout_corrected = corrected_vector[0]
 
-# ----------------------------------------------------------------------
+
 # 4. Combined ZNE + Readout Mitigation
-# ----------------------------------------------------------------------
+
 def readout_correct(p0_raw):
     m_vec = np.array([p0_raw, 1 - p0_raw])
     corr = A_inv @ m_vec
@@ -118,9 +117,9 @@ for s in scale_factors:
 a2, b2 = np.polyfit(scale_factors, combined_results, 1)
 combined_extrapolated = b2
 
-# ======================================================================
+
 # ENHANCED VISUALIZATION BLOCK
-# ======================================================================
+
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15.5, 6))
 
@@ -210,3 +209,38 @@ print(f"Raw Distorted Noisy Result     : {p0_noisy_raw:.4f}  (Error: {abs(p0_noi
 print(f"ZNE Mitigated Only Result      : {zne_extrapolated:.4f}  (Error: {abs(zne_extrapolated - ideal_p0):.4f})")
 print(f"Readout Mitigated Only Result  : {p0_readout_corrected:.4f}  (Error: {abs(p0_readout_corrected - ideal_p0):.4f})")
 print(f"Stacked Combined (ZNE+Readout) : {combined_extrapolated:.4f}  (Error: {abs(combined_extrapolated - ideal_p0):.4f})")
+
+
+# ----------------------------------------------------------------------
+# FIGURE 2 -- Presentation-friendly summary: all four methods side by side
+# ----------------------------------------------------------------------
+methods = ["Noisy\n(no mitigation)", "ZNE\nonly", "Readout\nonly", "ZNE + Readout\n(combined)"]
+values = [p0_noisy_raw, zne_extrapolated, p0_readout_corrected, combined_extrapolated]
+errors = [abs(v - ideal_p0) for v in values]
+bar_colors = ["crimson", "darkorange", "royalblue", "seagreen"]
+
+fig2, (bx1, bx2) = plt.subplots(1, 2, figsize=(13, 5.5))
+
+# --- Left panel: estimated P(0) for each method, vs. the true ideal line ---
+bars = bx1.bar(methods, values, color=bar_colors, alpha=0.85, edgecolor="black", linewidth=0.8)
+bx1.axhline(ideal_p0, color="forestgreen", linestyle=":", linewidth=2.5,
+            label=f"Exact ideal P(0) = {ideal_p0:.4f}")
+for bar, val in zip(bars, values):
+    bx1.text(bar.get_x() + bar.get_width() / 2, val + 0.003, f"{val:.4f}",
+              ha="center", fontsize=9.5, fontweight="bold")
+bx1.set_ylim(min(values) - 0.02, ideal_p0 + 0.02)
+bx1.set_title("Estimated P(0) by Mitigation Method", fontsize=12, fontweight="bold")
+bx1.set_ylabel("Probability of outcome P(0)")
+bx1.legend(loc="lower right", fontsize=9)
+
+# --- Right panel: absolute error for each method (lower = better) ---
+bars2 = bx2.bar(methods, errors, color=bar_colors, alpha=0.85, edgecolor="black", linewidth=0.8)
+for bar, err in zip(bars2, errors):
+    bx2.text(bar.get_x() + bar.get_width() / 2, err + 0.0008, f"{err:.4f}",
+              ha="center", fontsize=9.5, fontweight="bold")
+bx2.set_title("Absolute Error vs. Ideal Value\n(lower is better)", fontsize=12, fontweight="bold")
+bx2.set_ylabel("Absolute error |estimate - ideal|")
+
+plt.tight_layout()
+plt.savefig("Figure_2.png", dpi=300, bbox_inches="tight")
+plt.close()
