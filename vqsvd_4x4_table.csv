@@ -1,0 +1,6 @@
+Matrix,Qubits,Layers,Params,Optimal loss,Final loss,Loss gap,Mean abs err,Mean rel err (%)
+4x4,2,4,10,16.7330,16.7330,0.0000,0.0000,0.000
+
+Index,Classical sigma,VQSVD sigma,Abs error,Rel error (%)
+0,6.4399,6.4399,0.0000,0.000
+1,3.8533,3.8533,0.0000,0.000
