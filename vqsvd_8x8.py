@@ -56,10 +56,25 @@ TAG = "8x8"
 
 INIT_SCALES = [0.1, 0.3, 0.5, 0.2, 0.4]
 
-# Noise levels for the mitigation study (realistic current-hardware scale)
-P1 = 0.0008     # single-qubit gate depolarizing rate
-P2 = 0.006      # two-qubit (CNOT) depolarizing rate, applied per touched qubit
-P_READ = 0.015  # per-qubit readout bit-flip rate
+# Noise levels for the mitigation study (realistic current-hardware scale).
+# IMPORTANT: per-gate noise rates are DEPTH-SCALED, not fixed. A deeper ansatz
+# (more layers/qubits) accumulates noise over many more gates, and ZNE folding
+# multiplies that depth further (up to 5x for scale_factor=5). Using the same
+# fixed per-gate rate at every circuit size causes deep circuits to collapse
+# to the maximally-mixed state (all signal destroyed, result equals roughly
+# the identity-shift constant) well before any mitigation can help -- this
+# was verified empirically: at LAYERS=22 un-scaled rates gave noisy-raw MAE
+# ~8.9 (collapsed, mitigation barely moved it), while depth-scaled rates gave
+# noisy-raw MAE ~3.4 on the SAME trained circuit (mitigation then improves
+# further). Rates are anchored at LAYERS=4 (original, known-good) and shrink
+# with depth using an empirically-calibrated power law.
+P1_BASE = 0.0008     # single-qubit gate depolarizing rate at LAYERS=4
+P2_BASE = 0.006      # two-qubit (CNOT) depolarizing rate at LAYERS=4
+BASE_LAYERS = 4
+DEPTH_SCALE = (BASE_LAYERS / LAYERS) ** 1.5
+P1 = P1_BASE * DEPTH_SCALE
+P2 = P2_BASE * DEPTH_SCALE
+P_READ = 0.015  # per-qubit readout bit-flip rate (independent of depth -- applied once)
 
 
 # ----------------------------------------------------------------------

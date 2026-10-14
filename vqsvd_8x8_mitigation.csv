@@ -1,11 +1,11 @@
 Index,Classical,Ideal,Noisy (no mitigation),Readout only,ZNE only,ZNE+Readout combined
-0,10.7572,10.7564,9.4358,9.6455,9.9942,10.2293
-1,7.8494,7.8479,7.0928,7.2169,7.3811,7.5208
-2,5.2884,5.1268,5.0884,5.0891,5.1121,5.1125
+0,10.7572,10.7567,9.8921,10.1227,10.3167,10.5668
+1,7.8494,7.8477,7.3487,7.4864,7.5767,7.7265
+2,5.2884,5.1267,5.1048,5.1050,5.1209,5.1207
 
 Method,Mean abs error
 ideal,0.0546
-noisy_raw,0.7593
-readout_only,0.6479
-zne_only,0.4692
-combined,0.3441
+noisy_raw,0.5165
+readout_only,0.3936
+zne_only,0.2936
+combined,0.1603
