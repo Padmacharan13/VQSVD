@@ -65,6 +65,8 @@ SIZES = {
     "32x32":   dict(n=5, T=3, layers=12),
     "64x64":   dict(n=6, T=3, layers=16),
     "128x128": dict(n=7, T=3, layers=22),
+    "512x512": dict(n=9, T=3, layers=30),
+    "1024x1024": dict(n=10, T=3, layers=36),
 }
 
 
@@ -355,8 +357,9 @@ def run_size(size, args, service):
                     else f"python vqsvd_{size}.py --skip-noise")
             raise SystemExit(f"{pfile} not found - train first:  {hint}")
         p = np.load(pfile)
-        if p.shape != (L + 1, n):
-            raise SystemExit(f"{pfile} has shape {p.shape}, expected {(L + 1, n)}")
+        if p.ndim != 2 or p.shape[1] != n or p.shape[0] < 2:
+            raise SystemExit(f"{pfile} has shape {p.shape}; expected (layers+1, {n}) for {size}")
+        L = p.shape[0] - 1                      # depth comes from the trained parameters
 
         M, terms, shift = build_matrix(n)
         S_true = np.sort(np.linalg.svd(M, compute_uv=False))[::-1][:T]
